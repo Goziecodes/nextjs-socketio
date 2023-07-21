@@ -1,32 +1,70 @@
+'use client';
 import Image from 'next/image'
 import styles from './page.module.css'
+import { useEffect, useState } from 'react';
+import { socket } from '../socket';
+import { ConnectionState } from './ConnectionState';
+import { ConnectionManager } from './ConnectionManager';
+import { MyForm } from './MyForm';
+import { Events } from './Events';
+
+
+
+// "undefined" means the URL will be computed from the `window.location` object
+
 
 export default function Home() {
+
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [fooEvents, setFooEvents] = useState([]);
+  console.log({ isConnected })
+  console.log({ fooEvents })
+
+  // socket.on('error', e => console.log({ e }, "error>>"));
+  // socket.on('error', console.log("<<error>>"));
+  // socket.on('connect', console.log(socket.connected, "conn"));
+  socket.on("connect", () => {
+    console.log(socket.id, "soc id"); // x8WIv7-mJelg7on_ALbx
+  });
+  // socket.on('disconnect', console.log("disconnect"));
+
+
+  useEffect(() => {
+    function onConnect() {
+      console.log("connecting.....")
+      setIsConnected(true);
+    }
+
+    function onDisconnect() {
+      console.log("Disconnecting.....")
+      setIsConnected(false);
+    }
+
+    function onFooEvent(value) {
+      console.log({ value }, "value")
+      setFooEvents(previous => [...previous, value]);
+    }
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('spray_event', onFooEvent);
+    socket.on("spray_event", data => {
+      console.log({ data }, "spray")
+    });
+    socket.on("spray_event", data => {
+      console.log({ data }, "spray")
+    });
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('spray_event', onFooEvent);
+    };
+  }, []);
+
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+
 
       <div className={styles.center}>
         <Image
@@ -37,6 +75,14 @@ export default function Home() {
           height={37}
           priority
         />
+      </div>
+
+      <div>
+        <ConnectionState isConnected={isConnected} />
+        <Events events={fooEvents} />
+        <ConnectionManager />
+        {/* <MyForm /> */}
+
       </div>
 
       <div className={styles.grid}>
